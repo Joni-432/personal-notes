@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h1 class="mb-0">Notes</h1>
+  <a class="btn btn-primary" href="{{ url_for('add') }}">+ New note</a>
+</div>
+
+<form class="card card-body shadow-sm mb-4" method="get" action="{{ url_for('index') }}">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <input class="form-control" type="search" name="q" value="{{ q or '' }}" placeholder="Search by title or content...">
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-outline-secondary" type="submit">Search</button>
+    </div>
+    {% if q %}
+    <div class="col-auto">
+      <a class="btn btn-link" href="{{ url_for('index') }}">Clear</a>
+    </div>
+    {% endif %}
+  </div>
+</form>
+
+{% if notes %}
+  <div class="row g-3">
+    {% for note in notes %}
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <div>
+                <h5 class="card-title mb-2">{{ note.title }}</h5>
+                <p class="card-text mb-2">{{ note.content }}</p>
+                <div class="text-muted small">
+                  <div>Created: {{ note.created_at }}</div>
+                  {% if note.updated_at %}
+                    <div>Last updated: {{ note.updated_at }}</div>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="d-flex flex-column gap-2">
+                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('edit', note_id=note.id) }}">Edit</a>
+                <form method="post" action="{{ url_for('delete', note_id=note.id) }}" onsubmit="return confirm('Delete this note?');">
+                  <button class="btn btn-sm btn-outline-danger w-100" type="submit">Delete</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card shadow-sm border-0">
+    <div class="card-body text-center py-5">
+      {% if q %}
+        <h5 class="mb-2">No matches</h5>
+        <p class="text-muted mb-3">Nothing found for “{{ q }}”.</p>
+        <a class="btn btn-outline-secondary" href="{{ url_for('index') }}">Clear search</a>
+      {% else %}
+        <h5 class="mb-2">No notes yet</h5>
+        <p class="text-muted mb-3">Create your first note to get started.</p>
+        <a class="btn btn-primary" href="{{ url_for('add') }}">Add note</a>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

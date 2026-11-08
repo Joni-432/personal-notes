@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+{% set is_edit = note is not none %}
+<h1 class="mb-3">{% if is_edit %}Edit note{% else %}Add note{% endif %}</h1>
+
+<form method="post">
+  <div class="mb-3">
+    <label class="form-label" for="title">Title</label>
+    <input class="form-control" id="title" name="title" type="text"
+           value="{{ title if title is defined else (note.title if is_edit else '') }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="content">Content</label>
+    <textarea class="form-control" id="content" name="content" rows="6">{{ content if content is defined else (note.content if is_edit else '') }}</textarea>
+  </div>
+  <button class="btn btn-primary" type="submit">Save</button>
+  <a class="btn btn-secondary" href="{{ url_for('index') }}">Cancel</a>
+</form>
+{% endblock %}
