@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
+import re
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -60,6 +61,20 @@ def now_str():
     return datetime.now().strftime("%d %b %Y, %H:%M")
 
 
+def tokenize_query(q):
+    """Split search text on whitespace; drop empty tokens."""
+    return [token for token in q.split() if token]
+
+
+def note_matches_tokens(note, tokens):
+    """Require every token as a whole word in title or content (case-insensitive)."""
+    haystack = f"{note['title'] or ''} {note['content'] or ''}"
+    return all(
+        re.search(r"\b" + re.escape(token) + r"\b", haystack, re.IGNORECASE)
+        for token in tokens
+    )
+
+
 @app.context_processor
 def inject_note_count():
     return {"note_count": count_notes()}
@@ -68,16 +83,23 @@ def inject_note_count():
 @app.route("/")
 def index():
     q = request.args.get("q", "").strip()
+    tokens = tokenize_query(q)
     with get_db() as conn:
-        if q:
-            notes = conn.execute(
-                """
-                SELECT * FROM notes
-                WHERE title LIKE ? OR content LIKE ?
-                ORDER BY id DESC
-                """,
-                (f"%{q}%", f"%{q}%"),
-            ).fetchall()
+        if tokens:
+            clauses = []
+            params = []
+            for token in tokens:
+                clauses.append("(title LIKE ? OR content LIKE ?)")
+                params.extend([f"%{token}%", f"%{token}%"])
+            sql = (
+                "SELECT * FROM notes WHERE "
+                + " AND ".join(clauses)
+                + " ORDER BY id DESC"
+            )
+            candidates = conn.execute(sql, params).fetchall()
+            # LIKE alone matches substrings inside longer words (e.g. "jon" in
+            # "florjon"); keep only notes where every token is a whole word.
+            notes = [note for note in candidates if note_matches_tokens(note, tokens)]
         else:
             notes = conn.execute(
                 "SELECT * FROM notes ORDER BY id DESC"
