@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 app = Flask(__name__)
-app.secret_key = "dev-only-change-later"
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-only-local")
 
 DB_PATH = Path(__file__).parent / "notes.db"
 
